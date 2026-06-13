@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🇨🇳 China Trip Expense Splitter & Settlement</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        /* Mobile Active Tab Styling */
+        .active-tab {
+            color: #4f46e5;
+            border-bottom: 2px solid #4f46e5;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-20 md:pb-6">
+
+    <div class="max-w-7xl mx-auto px-3 py-4 md:px-4 md:py-6 space-y-4 md:space-y-6">
+        
+        <!-- Top Header Panel -->
+        <div class="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold flex items-center gap-2 text-slate-900">
+                    🇨🇳 China Trip Splitter
+                    <span id="sourceBadge" class="text-xs font-normal px-2.5 py-0.5 rounded-full border bg-slate-100 text-slate-600 border-slate-200">Checking data.json...</span>
+                </h1>
+                <p class="text-xs md:text-sm text-slate-500 mt-1">Split shared travel expenses in Malaysian Ringgit (RM). Toggle who paid (P) and who shares (S).</p>
+            </div>
+            
+            <!-- Mobile Responsive Action Buttons -->
+            <div class="grid grid-cols-3 gap-2 w-full md:w-auto">
+                <label class="flex items-center justify-center gap-1.5 px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl cursor-pointer transition-colors border border-slate-200 text-center">
+                    <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                    <span>Import</span>
+                    <input type="file" id="importJsonInput" accept=".json" class="hidden" onchange="importJSON(event)">
+                </label>
+                <button onclick="exportJSON()" class="flex items-center justify-center gap-1.5 px-2.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition-all shadow-sm text-center">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                    <span>JSON</span>
+                </button>
+                <button onclick="exportCSV()" class="flex items-center justify-center gap-1.5 px-2.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl transition-all shadow-sm text-center">
+                    <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+                    <span>Excel</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Bottom / Top Navigation Tabs (Hidden on Desktop) -->
+        <div class="md:hidden sticky top-0 bg-white border-b border-slate-200 -mx-3 px-3 py-2 z-30 flex justify-around shadow-sm">
+            <button id="tabBtn-ledger" onclick="switchMobileTab('ledger')" class="flex flex-col items-center gap-0.5 py-1 text-slate-500 font-medium text-xs w-1/3 border-b-2 border-transparent active-tab">
+                <i data-lucide="receipt" class="w-4 h-4"></i>
+                <span>Ledger</span>
+            </button>
+            <button id="tabBtn-balances" onclick="switchMobileTab('balances')" class="flex flex-col items-center gap-0.5 py-1 text-slate-500 font-medium text-xs w-1/3 border-b-2 border-transparent">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                <span>Balances</span>
+            </button>
+            <button id="tabBtn-transfers" onclick="switchMobileTab('transfers')" class="flex flex-col items-center gap-0.5 py-1 text-slate-500 font-medium text-xs w-1/3 border-b-2 border-transparent">
+                <i data-lucide="coins" class="w-4 h-4"></i>
+                <span>Transfers</span>
+            </button>
+        </div>
+
+        <!-- Desktop Overview Grid (Shown as Tabs on Mobile) -->
+        <div id="summarySection" class="hidden md:grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Personal Balance Stats card -->
+            <div id="balanceCard" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2 mb-3 md:mb-4">
+                        <i data-lucide="users" class="text-indigo-600 w-5 h-5"></i>
+                        Balances & Spending Summary (RM)
+                    </h3>
+                    <div class="space-y-2 md:space-y-3" id="statsContainer">
+                        <!-- JS renders personal balances -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Smart Transfer optimized instructions -->
+            <div id="transferCard" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2 mb-3 md:mb-4">
+                        <i data-lucide="coins" class="text-emerald-600 w-5 h-5"></i>
+                        Smart Settlement Schemes
+                    </h3>
+                    
+                    <div class="bg-emerald-50/50 rounded-xl border border-emerald-100 p-4 min-h-[140px] flex flex-col justify-between" id="transferContainer">
+                        <!-- JS transfers -->
+                    </div>
+                </div>
+                
+                <div class="mt-4 bg-slate-50 rounded-lg p-2.5 border border-slate-100 flex flex-col gap-1 text-[10px] md:text-xs text-slate-500">
+                    <div class="flex items-start gap-2">
+                        <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5"></i>
+                        <span><strong>P (Paid):</strong> Who advanced/paid the cash. Multiple payers split the advance.</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5"></i>
+                        <span><strong>S (Shared):</strong> Who splits/consumes the cost. Deselect anyone who shouldn't pay.</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bottom Section: FULL WIDTH Expense Workspace -->
+        <div id="ledgerSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden w-full">
+            <div class="p-4 md:p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div>
+                    <h2 class="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="receipt" class="text-indigo-600 w-5 h-5"></i>
+                        Ledger Workspace
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5" id="statsCount">Loading...</p>
+                </div>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <input type="text" id="searchInput" oninput="filterTable()" placeholder="Filter items..." class="w-full sm:w-64 px-3 py-1.5 text-xs md:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button onclick="addNewRow()" class="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs md:text-sm font-semibold rounded-xl transition-colors shrink-0">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Add New</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- DESKTOP Table View (Hidden on mobile) -->
+            <div class="hidden md:block overflow-x-auto custom-scrollbar flex-1 max-h-[500px] overflow-y-auto w-full">
+                <table class="w-full text-sm text-left border-collapse">
+                    <thead class="bg-slate-50/75 sticky top-0 backdrop-blur-sm border-b border-slate-200 text-slate-600 z-10">
+                        <tr>
+                            <th class="px-3 py-3 font-semibold w-24 shrink-0 text-xs">Date</th>
+                            <th class="px-3 py-3 font-semibold min-w-[240px] text-xs">Item Description</th>
+                            <th class="px-3 py-3 font-semibold w-20 text-xs">Category</th>
+                            <th class="px-3 py-3 font-semibold w-24 text-right text-xs">Total (RM)</th>
+                            <!-- Dynamic Members Columns with both Paid & Split selectors -->
+                            <th class="px-2 py-3 text-center min-w-[100px] bg-indigo-50/25">
+                                <input type="text" id="m0" value="Louis" onchange="renameMember(0, this.value)" class="w-full text-center bg-transparent border-b border-dashed border-slate-300 font-semibold text-indigo-700 focus:outline-none">
+                                <div class="flex justify-center gap-3 text-[10px] text-slate-400 mt-1 font-normal"><span>Paid</span><span>Shared</span></div>
+                            </th>
+                            <th class="px-2 py-3 text-center min-w-[100px] bg-indigo-50/25">
+                                <input type="text" id="m1" value="Jack" onchange="renameMember(1, this.value)" class="w-full text-center bg-transparent border-b border-dashed border-slate-300 font-semibold text-indigo-700 focus:outline-none">
+                                <div class="flex justify-center gap-3 text-[10px] text-slate-400 mt-1 font-normal"><span>Paid</span><span>Shared</span></div>
+                            </th>
+                            <th class="px-2 py-3 text-center min-w-[100px] bg-indigo-50/25">
+                                <input type="text" id="m2" value="Alex" onchange="renameMember(2, this.value)" class="w-full text-center bg-transparent border-b border-dashed border-slate-300 font-semibold text-indigo-700 focus:outline-none">
+                                <div class="flex justify-center gap-3 text-[10px] text-slate-400 mt-1 font-normal"><span>Paid</span><span>Shared</span></div>
+                            </th>
+                            <th class="px-2 py-3 text-center min-w-[100px] bg-indigo-50/25">
+                                <input type="text" id="m3" value="Yan" onchange="renameMember(3, this.value)" class="w-full text-center bg-transparent border-b border-dashed border-slate-300 font-semibold text-indigo-700 focus:outline-none">
+                                <div class="flex justify-center gap-3 text-[10px] text-slate-400 mt-1 font-normal"><span>Paid</span><span>Shared</span></div>
+                            </th>
+                            <th class="px-2 py-3 text-center min-w-[100px] bg-indigo-50/25">
+                                <input type="text" id="m4" value="James" onchange="renameMember(4, this.value)" class="w-full text-center bg-transparent border-b border-dashed border-slate-300 font-semibold text-indigo-700 focus:outline-none">
+                                <div class="flex justify-center gap-3 text-[10px] text-slate-400 mt-1 font-normal"><span>Paid</span><span>Shared</span></div>
+                            </th>
+                            <th class="px-3 py-3 text-center w-12 text-xs">Del</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expenseTableBody" class="divide-y divide-slate-100">
+                        <!-- JS dynamically loads table rows -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- MOBILE Card View (Shown on mobile, hidden on desktop) -->
+            <div class="block md:hidden p-3 space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar bg-slate-50" id="mobileCardsContainer">
+                <!-- JS dynamically loads cards -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Alert Toast -->
+    <div id="toast" class="fixed bottom-20 md:bottom-5 right-5 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 text-xs transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none z-50">
+        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+        <span id="toastMessage">Success</span>
+    </div>
+
+    <!-- Data Injection -->
+    <script>
+        // Offline Fallback Data in case data.json fetch fails
+        const fallbackJSON = [
+            {"日期": "Apr 2 (Thu)", "类型": "🚄 Transport", "项目/说明": "YOYO Bus: Ipoh → KLIA T1", "总额 (RM)": "277.6"},
+            {"日期": "Apr 2 (Thu)", "类型": "🍜 Food", "项目/说明": "Oriental Kopi Coffee House", "总额 (RM)": "85.4"},
+            {"日期": "Apr 3 (Fri)", "类型": "📲 Telecom", "项目/说明": "Local SIM Card Pack", "总额 (RM)": "51.09"},
+            {"日期": "Apr 3 (Fri)", "类型": "🚄 Transport", "项目/说明": "Didi Ride (Airport → JinZhu Hotel)", "总额 (RM)": "72.24"},
+            {"日期": "Apr 3 (Fri)", "类型": "🚄 Transport", "项目/说明": "Highway Toll Fees", "总额 (RM)": "23.35"},
+            {"日期": "Apr 11 (Sat)", "类型": "🚄 Transport", "项目/说明": "YOYO Bus: KLIA → Ipoh return", "总额 (RM)": "262.6"},
+            {"日期": "Apr 11 (Sat)", "类型": "🚄 Transport", "项目/说明": "Didi rides total backlog (paid by Jack)", "总额 (RM)": "330.17"}
+        ];
+
+        let members = ["Louis", "Jack", "Alex", "Yan", "James"];
+        let expenses = [];
+        let activeMobileTab = "ledger";
+
+        // Asynchronously load data from data.json or fallback to fallbackJSON
+        async function initData() {
+            const badge = document.getElementById("sourceBadge");
+            let sourceData = fallbackJSON;
+            let loadedFromLocalFile = false;
+
+            try {
+                const response = await fetch('data.json');
+                if (response.ok) {
+                    sourceData = await response.json();
+                    loadedFromLocalFile = true;
+                    if (badge) {
+                        badge.innerText = "Loaded: data.json";
+                        badge.className = "text-xs font-semibold px-2.5 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200";
+                    }
+                } else {
+                    throw new Error("HTTP Status " + response.status);
+                }
+            } catch (err) {
+                console.warn("Could not load data.json. Using offline built-in data. Error:", err.message);
+                if (badge) {
+                    badge.innerText = "Fallback: Offline Data";
+                    badge.className = "text-xs font-semibold px-2.5 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200";
+                }
+            }
+
+            parseLoadedData(sourceData);
+            renderAll();
+        }
+
+        // Parse JSON items and assign automated splitters/payers
+        function parseLoadedData(rawArray) {
+            expenses = rawArray.map((item, idx) => {
+                let amount = parseFloat(item["总额 (RM)"]) || 0;
+                let desc = (item["项目/说明"] || "").toLowerCase();
+                
+                // Smart Paid Defaults
+                let paidBy = [];
+                if (desc.includes("jack") || desc.includes("backlog")) {
+                    paidBy = ["Jack"];
+                } else if (idx % 5 === 0) {
+                    paidBy = ["Louis"];
+                } else if (idx % 5 === 1) {
+                    paidBy = ["Jack"];
+                } else if (idx % 5 === 2) {
+                    paidBy = ["Alex"];
+                } else if (idx % 5 === 3) {
+                    paidBy = ["Yan"];
+                } else {
+                    paidBy = ["James"];
+                }
+
+                // Smart Split Defaults
+                let sharedBy = ["Louis", "Jack", "Alex", "Yan", "James"]; // Default to all members
+                if (desc.includes("(2 pax)") || desc.includes("2 pax")) {
+                    sharedBy = ["Louis", "Jack"];
+                } else if (desc.includes("(3 pax)") || desc.includes("3 pax")) {
+                    sharedBy = ["Alex", "Yan", "James"];
+                } else if (desc.includes("fruit") || desc.includes("toll round 2")) {
+                    sharedBy = ["Louis", "Jack"];
+                }
+
+                return {
+                    id: idx + 1,
+                    date: item["日期"] || "Apr 11",
+                    item: item["项目/说明"] || "Expense Item",
+                    category: item["类型"] || "Other",
+                    amount: amount > 0 ? parseFloat(amount.toFixed(2)) : "",
+                    paidBy: paidBy,
+                    sharedBy: sharedBy
+                };
+            });
+        }
+
+        // Get matching CSS colors for travel categories
+        function getCategoryStyle(cat) {
+            if (!cat) return "bg-slate-100 text-slate-600 border-slate-200";
+            const lower = cat.toLowerCase();
+            if (lower.includes("transport") || lower.includes("didi") || lower.includes("toll")) return "bg-blue-50 text-blue-700 border-blue-100";
+            if (lower.includes("food") || lower.includes("dining")) return "bg-orange-50 text-orange-700 border-orange-100";
+            if (lower.includes("drinks") || lower.includes("coffee")) return "bg-yellow-50 text-yellow-700 border-yellow-100";
+            if (lower.includes("attractions") || lower.includes("ticket")) return "bg-purple-50 text-purple-700 border-purple-100";
+            if (lower.includes("telecom")) return "bg-teal-50 text-teal-700 border-teal-100";
+            if (lower.includes("lodging") || lower.includes("hotel")) return "bg-emerald-50 text-emerald-700 border-emerald-100";
+            return "bg-slate-100 text-slate-700 border-slate-200";
+        }
+
+        function getInitials(name) {
+            if (!name) return "?";
+            if (name.toLowerCase() === "james") return "Ja";
+            return name.charAt(0).toUpperCase();
+        }
+
+        function renameMember(index, newName) {
+            const oldName = members[index];
+            const cleanName = newName.trim() || `Member ${index + 1}`;
+            members[index] = cleanName;
+            
+            expenses.forEach(exp => {
+                exp.paidBy = exp.paidBy.map(name => name === oldName ? cleanName : name);
+                exp.sharedBy = exp.sharedBy.map(name => name === oldName ? cleanName : name);
+            });
+            
+            showToast(`Renamed member to: ${cleanName}`);
+            renderAll();
+        }
+
+        function togglePayer(expId, name) {
+            expenses = expenses.map(exp => {
+                if (exp.id === expId) {
+                    const exists = exp.paidBy.includes(name);
+                    const newPaid = exists 
+                        ? exp.paidBy.filter(n => n !== name) 
+                        : [...exp.paidBy, name];
+                    return { ...exp, paidBy: newPaid };
+                }
+                return exp;
+            });
+            renderAll();
+        }
+
+        function toggleSplitter(expId, name) {
+            expenses = expenses.map(exp => {
+                if (exp.id === expId) {
+                    const exists = exp.sharedBy.includes(name);
+                    const newShared = exists 
+                        ? exp.sharedBy.filter(n => n !== name) 
+                        : [...exp.sharedBy, name];
+                    return { ...exp, sharedBy: newShared };
+                }
+                return exp;
+            });
+            renderAll();
+        }
+
+        function updateCell(id, field, value) {
+            expenses = expenses.map(exp => {
+                if (exp.id === id) {
+                    if (field === 'amount') {
+                        return { ...exp, amount: value === "" ? "" : parseFloat(value) || 0 };
+                    }
+                    return { ...exp, [field]: value };
+                }
+                return exp;
+            });
+            calculateSettlement();
+        }
+
+        function addNewRow() {
+            const newId = expenses.length > 0 ? Math.max(...expenses.map(e => e.id)) + 1 : 1;
+            expenses.unshift({
+                id: newId,
+                date: "Apr 11",
+                item: "New Travel Expense",
+                category: "Other",
+                amount: "",
+                paidBy: [],
+                sharedBy: [...members]
+            });
+            showToast("Added a blank record!");
+            renderAll();
+        }
+
+        function removeRow(id) {
+            expenses = expenses.filter(exp => exp.id !== id);
+            showToast("Removed entry successfully.");
+            renderAll();
+        }
+
+        let globalSettlement = { balances: {}, paidTotals: {}, consumedTotals: {}, transfers: [] };
+
+        function calculateSettlement() {
+            let balances = {};
+            let paidTotals = {};
+            let consumedTotals = {};
+
+            members.forEach(m => {
+                balances[m] = 0;
+                paidTotals[m] = 0;
+                consumedTotals[m] = 0;
+            });
+
+            expenses.forEach(exp => {
+                const amount = parseFloat(exp.amount) || 0;
+                if (amount === 0) return; 
+
+                // 1. Distribute consumption among splitters
+                const consumers = exp.sharedBy && exp.sharedBy.length > 0 ? exp.sharedBy : [];
+                if (consumers.length > 0) {
+                    const shareAmount = amount / consumers.length;
+                    consumers.forEach(m => {
+                        consumedTotals[m] += shareAmount;
+                        balances[m] -= shareAmount;
+                    });
+                }
+
+                // 2. Distribute credits back to payers
+                const payers = exp.paidBy && exp.paidBy.length > 0 ? exp.paidBy : [];
+                if (payers.length > 0) {
+                    const paidPerPerson = amount / payers.length;
+                    payers.forEach(m => {
+                        paidTotals[m] += paidPerPerson;
+                        balances[m] += paidPerPerson;
+                    });
+                }
+            });
+
+            let debtors = [];
+            let creditors = [];
+            for (let m in balances) {
+                if (balances[m] < -0.01) debtors.push({ name: m, amount: -balances[m] });
+                else if (balances[m] > 0.01) creditors.push({ name: m, amount: balances[m] });
+            }
+
+            debtors.sort((a, b) => b.amount - a.amount);
+            creditors.sort((a, b) => b.amount - a.amount);
+
+            let transfers = [];
+            let i = 0, j = 0;
+
+            while (i < debtors.length && j < creditors.length) {
+                let debtor = debtors[i];
+                let creditor = creditors[j];
+
+                let amt = Math.min(debtor.amount, creditor.amount);
+                if (amt > 0.01) {
+                    transfers.push({
+                        from: debtor.name,
+                        to: creditor.name,
+                        amount: amt
+                    });
+                }
+
+                debtor.amount -= amt;
+                creditor.amount -= amt;
+
+                if (debtor.amount < 0.01) i++;
+                if (creditor.amount < 0.01) j++;
+            }
+
+            globalSettlement = { balances, paidTotals, consumedTotals, transfers };
+            renderStatsAndTransfers();
+        }
+
+        function renderTable() {
+            const tableBody = document.getElementById("expenseTableBody");
+            const mobileCardsContainer = document.getElementById("mobileCardsContainer");
+            const filterText = document.getElementById("searchInput").value.toLowerCase();
+            
+            tableBody.innerHTML = "";
+            mobileCardsContainer.innerHTML = "";
+
+            let visibleCount = 0;
+
+            expenses.forEach(exp => {
+                const isMatch = exp.date.toLowerCase().includes(filterText) || 
+                                exp.item.toLowerCase().includes(filterText) || 
+                                (exp.category && exp.category.toLowerCase().includes(filterText));
+                if (!isMatch) return;
+
+                visibleCount++;
+
+                // 1. DESKTOP ROW RENDER
+                let cbHtml = "";
+                members.forEach((m) => {
+                    const isPaidChecked = exp.paidBy.includes(m);
+                    const isSharedChecked = exp.sharedBy.includes(m);
+                    cbHtml += `
+                        <td class="px-1 py-2 text-center bg-indigo-50/5">
+                            <div class="flex items-center justify-center gap-4">
+                                <input 
+                                    type="checkbox" 
+                                    class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
+                                    ${isPaidChecked ? 'checked' : ''} 
+                                    onchange="togglePayer(${exp.id}, '${m}')"
+                                    title="Check if ${m} paid"
+                                >
+                                <input 
+                                    type="checkbox" 
+                                    class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
+                                    ${isSharedChecked ? 'checked' : ''} 
+                                    onchange="toggleSplitter(${exp.id}, '${m}')"
+                                    title="Check if ${m} shared"
+                                >
+                            </div>
+                        </td>
+                    `;
+                });
+
+                const row = document.createElement("tr");
+                row.className = "hover:bg-slate-50/80 transition-colors";
+                row.innerHTML = `
+                    <td class="px-3 py-2">
+                        <input type="text" value="${exp.date}" onchange="updateCell(${exp.id}, 'date', this.value)" class="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:outline-none py-1 text-xs text-slate-600">
+                    </td>
+                    <td class="px-3 py-2">
+                        <input type="text" value="${exp.item}" onchange="updateCell(${exp.id}, 'item', this.value)" class="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:outline-none py-1 font-semibold text-slate-800 text-sm">
+                    </td>
+                    <td class="px-3 py-2">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border ${getCategoryStyle(exp.category)}">
+                            ${exp.category || 'Other'}
+                        </span>
+                    </td>
+                    <td class="px-3 py-2 text-right">
+                        <div class="relative flex items-center justify-end">
+                            <span class="text-xs text-slate-400 mr-1">RM</span>
+                            <input type="number" step="0.01" value="${exp.amount}" onchange="updateCell(${exp.id}, 'amount', this.value)" placeholder="0.00" class="w-16 text-right bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:outline-none font-bold py-1 text-slate-900 text-sm">
+                        </div>
+                    </td>
+                    ${cbHtml}
+                    <td class="px-3 py-2 text-center">
+                        <button onclick="removeRow(${exp.id})" class="text-slate-400 hover:text-red-500 p-1.5 rounded-xl hover:bg-slate-100 transition-colors">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+
+                // 2. MOBILE CARD RENDER
+                let mobilePaidAvatarsHtml = "";
+                let mobileSharedAvatarsHtml = "";
+                
+                members.forEach((m) => {
+                    const isPaid = exp.paidBy.includes(m);
+                    const isShared = exp.sharedBy.includes(m);
+                    
+                    const paidStyle = isPaid 
+                        ? 'bg-emerald-600 text-white ring-2 ring-emerald-100 font-bold border-emerald-600' 
+                        : 'bg-slate-100 text-slate-500 border-slate-200';
+                        
+                    const sharedStyle = isShared 
+                        ? 'bg-indigo-600 text-white ring-2 ring-indigo-100 font-bold border-indigo-600' 
+                        : 'bg-slate-100 text-slate-500 border-slate-200';
+
+                    mobilePaidAvatarsHtml += `
+                        <button 
+                            onclick="togglePayer(${exp.id}, '${m}')" 
+                            class="w-9 h-9 flex items-center justify-center rounded-full text-xs border transition-all shrink-0 ${paidStyle}"
+                            title="${m} paid"
+                        >
+                            ${getInitials(m)}
+                        </button>
+                    `;
+
+                    mobileSharedAvatarsHtml += `
+                        <button 
+                            onclick="toggleSplitter(${exp.id}, '${m}')" 
+                            class="w-9 h-9 flex items-center justify-center rounded-full text-xs border transition-all shrink-0 ${sharedStyle}"
+                            title="${m} shared"
+                        >
+                            ${getInitials(m)}
+                        </button>
+                    `;
+                });
+
+                const card = document.createElement("div");
+                card.className = "bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs space-y-3.5";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <span class="text-[10px] text-slate-400 font-medium">${exp.date}</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${getCategoryStyle(exp.category)}">
+                            ${exp.category || 'Other'}
+                        </span>
+                    </div>
+                    
+                    <div class="space-y-1">
+                        <input type="text" value="${exp.item}" onchange="updateCell(${exp.id}, 'item', this.value)" class="w-full bg-transparent border-b border-dashed border-transparent hover:border-slate-200 focus:border-indigo-500 font-semibold text-slate-800 text-sm focus:outline-none">
+                    </div>
+
+                    <div class="flex items-center justify-between gap-2 bg-slate-50/50 p-2 rounded-xl border border-slate-100">
+                        <span class="text-xs text-slate-400 font-semibold">Total Cost:</span>
+                        <div class="flex items-center text-sm font-bold text-slate-900">
+                            <span class="text-xs text-slate-400 mr-1">RM</span>
+                            <input type="number" step="0.01" value="${exp.amount}" onchange="updateCell(${exp.id}, 'amount', this.value)" placeholder="0.00" class="w-20 text-right bg-transparent focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded-md px-1 py-0.5 font-bold">
+                        </div>
+                    </div>
+
+                    <div class="space-y-2.5 pt-1 border-t border-slate-100">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] text-slate-400 font-bold tracking-wider uppercase">Payer (Who paid)</span>
+                            <button onclick="removeRow(${exp.id})" class="text-slate-400 hover:text-red-500 p-1 rounded-lg transition-colors flex items-center gap-1 text-xs">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                Delete
+                            </button>
+                        </div>
+                        <div class="flex gap-2 items-center overflow-x-auto custom-scrollbar pb-1">
+                            ${mobilePaidAvatarsHtml}
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] text-slate-400 font-bold tracking-wider uppercase">Splitters (Who shares)</span>
+                        </div>
+                        <div class="flex gap-2 items-center overflow-x-auto custom-scrollbar pb-1">
+                            ${mobileSharedAvatarsHtml}
+                        </div>
+                    </div>
+                `;
+                mobileCardsContainer.appendChild(card);
+            });
+
+            document.getElementById("statsCount").innerText = `${expenses.length} records. Showing ${visibleCount} filtered items.`;
+            lucide.createIcons();
+        }
+
+        function renderStatsAndTransfers() {
+            const statsContainer = document.getElementById("statsContainer");
+            statsContainer.innerHTML = "";
+
+            members.forEach(m => {
+                const bal = globalSettlement.balances[m] || 0;
+                const paid = globalSettlement.paidTotals[m] || 0;
+                const spent = globalSettlement.consumedTotals[m] || 0;
+                
+                let balanceColor = "text-slate-400";
+                let statusText = "Settled";
+                if (bal > 0.01) {
+                    balanceColor = "text-emerald-600 font-bold";
+                    statusText = `Receives RM ${bal.toFixed(2)}`;
+                } else if (bal < -0.01) {
+                    balanceColor = "text-rose-500 font-bold";
+                    statusText = `Owes RM ${Math.abs(bal).toFixed(2)}`;
+                }
+
+                const card = document.createElement("div");
+                card.className = "flex justify-between items-center p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-all";
+                card.innerHTML = `
+                    <div>
+                        <span class="font-bold text-slate-800 text-sm block">${m}</span>
+                        <span class="text-xs text-slate-400 block mt-0.5">Paid: RM ${paid.toFixed(2)} | Share: RM ${spent.toFixed(2)}</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs md:text-sm ${balanceColor}">${statusText}</span>
+                    </div>
+                `;
+                statsContainer.appendChild(card);
+            });
+
+            const transContainer = document.getElementById("transferContainer");
+            transContainer.innerHTML = "";
+
+            if (globalSettlement.transfers.length === 0) {
+                transContainer.innerHTML = `
+                    <div class="flex-1 flex flex-col items-center justify-center text-emerald-600/70 py-6 text-center">
+                        <i data-lucide="check-circle-2" class="w-10 h-10 mb-2"></i>
+                        <p class="font-semibold text-xs">All accounts clear. No transfers needed!</p>
+                    </div>
+                `;
+            } else {
+                const list = document.createElement("div");
+                list.className = "space-y-2 max-h-[180px] overflow-y-auto custom-scrollbar pr-1";
+                globalSettlement.transfers.forEach(t => {
+                    const row = document.createElement("div");
+                    row.className = "flex items-center justify-between bg-white p-2.5 rounded-xl border border-emerald-100 shadow-2xs";
+                    row.innerHTML = `
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-xs font-semibold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md">${t.from}</span>
+                            <i data-lucide="arrow-right" class="w-3 h-3 text-slate-300"></i>
+                            <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">${t.to}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-bold text-slate-900 text-xs md:text-sm">RM ${t.amount.toFixed(2)}</span>
+                        </div>
+                    `;
+                    list.appendChild(row);
+                });
+                transContainer.appendChild(list);
+            }
+            lucide.createIcons();
+        }
+
+        // Handle Responsive Tab Switch (Only visible on Mobile viewports)
+        function switchMobileTab(tab) {
+            activeMobileTab = tab;
+            
+            const ledgerSec = document.getElementById("ledgerSection");
+            const summarySec = document.getElementById("summarySection");
+            const balanceCard = document.getElementById("balanceCard");
+            const transferCard = document.getElementById("transferCard");
+
+            ['ledger', 'balances', 'transfers'].forEach(t => {
+                document.getElementById(`tabBtn-${t}`).classList.remove('active-tab');
+            });
+            document.getElementById(`tabBtn-${tab}`).classList.add('active-tab');
+
+            if (window.innerWidth < 768) { 
+                if (tab === "ledger") {
+                    ledgerSec.classList.remove("hidden");
+                    summarySec.classList.add("hidden");
+                } else if (tab === "balances") {
+                    ledgerSec.classList.add("hidden");
+                    summarySec.classList.remove("hidden");
+                    balanceCard.classList.remove("hidden");
+                    transferCard.classList.add("hidden");
+                } else if (tab === "transfers") {
+                    ledgerSec.classList.add("hidden");
+                    summarySec.classList.remove("hidden");
+                    balanceCard.classList.add("hidden");
+                    transferCard.classList.remove("hidden");
+                }
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            const ledgerSec = document.getElementById("ledgerSection");
+            const summarySec = document.getElementById("summarySection");
+            const balanceCard = document.getElementById("balanceCard");
+            const transferCard = document.getElementById("transferCard");
+
+            if (window.innerWidth >= 768) {
+                ledgerSec.classList.remove("hidden");
+                summarySec.classList.remove("hidden");
+                summarySec.classList.add("grid");
+                balanceCard.classList.remove("hidden");
+                transferCard.classList.remove("hidden");
+            } else {
+                switchMobileTab(activeMobileTab);
+            }
+        });
+
+        function renderAll() {
+            for (let i = 0; i < 5; i++) {
+                const el = document.getElementById(`m${i}`);
+                if (el) el.value = members[i];
+            }
+            renderTable();
+            calculateSettlement();
+            switchMobileTab(activeMobileTab);
+        }
+
+        function filterTable() {
+            renderTable();
+        }
+
+        function importJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed.members && Array.isArray(parsed.members)) {
+                        members = parsed.members;
+                    }
+                    if (parsed.expenses && Array.isArray(parsed.expenses)) {
+                        expenses = parsed.expenses;
+                    } else if (Array.isArray(parsed)) {
+                        parseLoadedData(parsed);
+                    }
+                    showToast("📁 Backup loaded successfully!");
+                    renderAll();
+                } catch (err) {
+                    showToast("❌ Could not read JSON format.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function exportJSON() {
+            const exportObject = {
+                appId: "china-trip-splitter-v2",
+                exportedAt: new Date().toISOString(),
+                members: members,
+                expenses: expenses
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObject, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "China_Trip_Splitter_With_Individual_Splits.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast("💾 Progress saved as JSON!");
+        }
+
+        function exportCSV() {
+            let csv = "\uFEFF"; 
+            csv += "🇨🇳 China Trip Splitter - Advanced Settlement Report\n\n";
+            csv += "Date,Item Description,Category,Total Amount (RM),Payer(s),Split With / Shared By\n";
+
+            expenses.forEach(exp => {
+                const amount = parseFloat(exp.amount) || 0;
+                const payers = exp.paidBy.length > 0 ? exp.paidBy.join(" & ") : "None";
+                const splitters = exp.sharedBy.length > 0 ? exp.sharedBy.join(" & ") : "Nobody";
+                csv += `"${exp.date}","${exp.item}","${exp.category}",${amount.toFixed(2)},"${payers}","${splitters}"\n`;
+            });
+
+            csv += "\n\n=== Personal Balances Summary ===\n";
+            csv += "Member,Total Paid (RM),Consumed Share (RM),Net Difference (RM)\n";
+            
+            members.forEach(m => {
+                const bal = globalSettlement.balances[m] || 0;
+                const paid = globalSettlement.paidTotals[m] || 0;
+                const consumed = globalSettlement.consumedTotals[m] || 0;
+                const balanceStr = bal > 0 ? `+${bal.toFixed(2)} (Receives)` : `${bal.toFixed(2)} (Owes)`;
+                csv += `"${m}",${paid.toFixed(2)},${consumed.toFixed(2)},"${balanceStr}"\n`;
+            });
+
+            csv += "\n\n=== Smart Remittance Instructions ===\n";
+            if (globalSettlement.transfers.length === 0) {
+                csv += "All balances clear. No remittance needed.\n";
+            } else {
+                globalSettlement.transfers.forEach(t => {
+                    csv += `"${t.from} transfers to ${t.to}",RM ${t.amount.toFixed(2)}\n`;
+                });
+            }
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", "China_Trip_Settlement_With_Splits.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("📈 Spreadsheet report downloaded!");
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById("toast");
+            const msgSpan = document.getElementById("toastMessage");
+            msgSpan.innerText = msg;
+            toast.style.opacity = "1";
+            toast.style.transform = "translateY(0)";
+            setTimeout(() => {
+                toast.style.opacity = "0";
+                toast.style.transform = "translateY(80px)";
+            }, 3000);
+        }
+
+        window.onload = function() {
+            initData();
+        };
+    </script>
+</body>
+</html>
