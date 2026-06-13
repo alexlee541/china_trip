@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🇨🇳 China Trip Expense Splitter & Settlement</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -38,36 +36,7 @@
 <body class="bg-slate-50 text-slate-800 min-h-screen pb-20 md:pb-6">
 
     <div class="max-w-7xl mx-auto px-3 py-4 md:px-4 md:py-6 space-y-4 md:space-y-6">
-        
-        <!-- Top Header Panel -->
-        <div class="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-                <h1 class="text-xl md:text-2xl font-bold flex items-center gap-2 text-slate-900">
-                    🇨🇳 China Trip Splitter
-                    <span id="sourceBadge" class="text-xs font-normal px-2.5 py-0.5 rounded-full border bg-slate-100 text-slate-600 border-slate-200">Checking data.json...</span>
-                </h1>
-                <p class="text-xs md:text-sm text-slate-500 mt-1">Split shared travel expenses in Malaysian Ringgit (RM). Toggle who paid (P) and who shares (S).</p>
-            </div>
-            
-            <!-- Mobile Responsive Action Buttons -->
-            <div class="grid grid-cols-3 gap-2 w-full md:w-auto">
-                <label class="flex items-center justify-center gap-1.5 px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl cursor-pointer transition-colors border border-slate-200 text-center">
-                    <i data-lucide="upload" class="w-3.5 h-3.5"></i>
-                    <span>Import</span>
-                    <input type="file" id="importJsonInput" accept=".json" class="hidden" onchange="importJSON(event)">
-                </label>
-                <button onclick="exportJSON()" class="flex items-center justify-center gap-1.5 px-2.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition-all shadow-sm text-center">
-                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                    <span>JSON</span>
-                </button>
-                <button onclick="exportCSV()" class="flex items-center justify-center gap-1.5 px-2.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl transition-all shadow-sm text-center">
-                    <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
-                    <span>Excel</span>
-                </button>
-            </div>
-        </div>
 
-        <!-- Mobile Bottom / Top Navigation Tabs (Hidden on Desktop) -->
         <div class="md:hidden sticky top-0 bg-white border-b border-slate-200 -mx-3 px-3 py-2 z-30 flex justify-around shadow-sm">
             <button id="tabBtn-ledger" onclick="switchMobileTab('ledger')" class="flex flex-col items-center gap-0.5 py-1 text-slate-500 font-medium text-xs w-1/3 border-b-2 border-transparent active-tab">
                 <i data-lucide="receipt" class="w-4 h-4"></i>
@@ -83,10 +52,8 @@
             </button>
         </div>
 
-        <!-- Desktop Overview Grid (Shown as Tabs on Mobile) -->
         <div id="summarySection" class="hidden md:grid grid-cols-1 md:grid-cols-2 gap-6">
             
-            <!-- Personal Balance Stats card -->
             <div id="balanceCard" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6 flex flex-col justify-between">
                 <div>
                     <h3 class="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2 mb-3 md:mb-4">
@@ -94,12 +61,10 @@
                         Balances & Spending Summary (RM)
                     </h3>
                     <div class="space-y-2 md:space-y-3" id="statsContainer">
-                        <!-- JS renders personal balances -->
-                    </div>
+                        </div>
                 </div>
             </div>
 
-            <!-- Smart Transfer optimized instructions -->
             <div id="transferCard" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6 flex flex-col justify-between">
                 <div>
                     <h3 class="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2 mb-3 md:mb-4">
@@ -108,8 +73,7 @@
                     </h3>
                     
                     <div class="bg-emerald-50/50 rounded-xl border border-emerald-100 p-4 min-h-[140px] flex flex-col justify-between" id="transferContainer">
-                        <!-- JS transfers -->
-                    </div>
+                        </div>
                 </div>
                 
                 <div class="mt-4 bg-slate-50 rounded-lg p-2.5 border border-slate-100 flex flex-col gap-1 text-[10px] md:text-xs text-slate-500">
@@ -126,7 +90,6 @@
 
         </div>
 
-        <!-- Bottom Section: FULL WIDTH Expense Workspace -->
         <div id="ledgerSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden w-full">
             <div class="p-4 md:p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div>
@@ -137,6 +100,10 @@
                     <p class="text-xs text-slate-400 mt-0.5" id="statsCount">Loading...</p>
                 </div>
                 <div class="flex gap-2 w-full sm:w-auto">
+                    <button onclick="clearData()" class="flex items-center gap-1 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs md:text-sm font-semibold rounded-xl transition-colors shrink-0">
+                        <i data-lucide="trash" class="w-4 h-4"></i>
+                        <span>Reset Data</span>
+                    </button>
                     <input type="text" id="searchInput" oninput="filterTable()" placeholder="Filter items..." class="w-full sm:w-64 px-3 py-1.5 text-xs md:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     <button onclick="addNewRow()" class="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs md:text-sm font-semibold rounded-xl transition-colors shrink-0">
                         <i data-lucide="plus" class="w-4 h-4"></i>
@@ -145,7 +112,6 @@
                 </div>
             </div>
 
-            <!-- DESKTOP Table View (Hidden on mobile) -->
             <div class="hidden md:block overflow-x-auto custom-scrollbar flex-1 max-h-[500px] overflow-y-auto w-full">
                 <table class="w-full text-sm text-left border-collapse">
                     <thead class="bg-slate-50/75 sticky top-0 backdrop-blur-sm border-b border-slate-200 text-slate-600 z-10">
@@ -154,7 +120,6 @@
                             <th class="px-3 py-3 font-semibold min-w-[240px] text-xs">Item Description</th>
                             <th class="px-3 py-3 font-semibold w-20 text-xs">Category</th>
                             <th class="px-3 py-3 font-semibold w-24 text-right text-xs">Total (RM)</th>
-                            <!-- Dynamic Members Columns with both Paid & Split selectors -->
                             <th class="px-2 py-3 text-center min-w-[100px] bg-indigo-50/25">
                                 <input type="text" id="m0" value="Louis" onchange="renameMember(0, this.value)" class="w-full text-center bg-transparent border-b border-dashed border-slate-300 font-semibold text-indigo-700 focus:outline-none">
                                 <div class="flex justify-center gap-3 text-[10px] text-slate-400 mt-1 font-normal"><span>Paid</span><span>Shared</span></div>
@@ -179,28 +144,23 @@
                         </tr>
                     </thead>
                     <tbody id="expenseTableBody" class="divide-y divide-slate-100">
-                        <!-- JS dynamically loads table rows -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
 
-            <!-- MOBILE Card View (Shown on mobile, hidden on desktop) -->
             <div class="block md:hidden p-3 space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar bg-slate-50" id="mobileCardsContainer">
-                <!-- JS dynamically loads cards -->
-            </div>
+                </div>
         </div>
 
     </div>
 
-    <!-- Alert Toast -->
     <div id="toast" class="fixed bottom-20 md:bottom-5 right-5 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 text-xs transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none z-50">
         <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
         <span id="toastMessage">Success</span>
     </div>
 
-    <!-- Data Injection -->
     <script>
-        // Offline Fallback Data in case data.json fetch fails
+        // Offline Fallback Data in case data.json fetch fails and no local storage exists
         const fallbackJSON = [
             {"日期": "Apr 2 (Thu)", "类型": "🚄 Transport", "项目/说明": "YOYO Bus: Ipoh → KLIA T1", "总额 (RM)": "277.6"},
             {"日期": "Apr 2 (Thu)", "类型": "🍜 Food", "项目/说明": "Oriental Kopi Coffee House", "总额 (RM)": "85.4"},
@@ -214,34 +174,60 @@
         let members = ["Louis", "Jack", "Alex", "Yan", "James"];
         let expenses = [];
         let activeMobileTab = "ledger";
+        let isInitialLoad = true;
 
-        // Asynchronously load data from data.json or fallback to fallbackJSON
+        // Auto-saving mechanism
+        function saveToStorage() {
+            if (isInitialLoad) return; // Don't save during initialization
+            const dataToSave = {
+                members: members,
+                expenses: expenses
+            };
+            localStorage.setItem('chinaTripData', JSON.stringify(dataToSave));
+        }
+
+        // Wipe data completely if needed
+        function clearData() {
+            if(confirm("Are you sure you want to reset all data back to the defaults? This cannot be undone.")) {
+                localStorage.removeItem('chinaTripData');
+                location.reload();
+            }
+        }
+
+        // Asynchronously load data from Local Storage, then data.json, or fallback
         async function initData() {
-            const badge = document.getElementById("sourceBadge");
-            let sourceData = fallbackJSON;
-            let loadedFromLocalFile = false;
+            // 1. Check if we have saved changes in the browser first
+            const savedData = localStorage.getItem('chinaTripData');
+            
+            if (savedData) {
+                try {
+                    const parsed = JSON.parse(savedData);
+                    members = parsed.members || members;
+                    expenses = parsed.expenses || [];
+                    isInitialLoad = false;
+                    renderAll();
+                    showToast("Loaded your saved auto-draft!");
+                    return; // Exit here, use the saved state
+                } catch (e) {
+                    console.warn("Failed to parse local storage. Reverting to fetch.");
+                }
+            }
 
+            // 2. If no saved changes, try fetching data.json
+            let sourceData = fallbackJSON;
             try {
                 const response = await fetch('data.json');
                 if (response.ok) {
                     sourceData = await response.json();
-                    loadedFromLocalFile = true;
-                    if (badge) {
-                        badge.innerText = "Loaded: data.json";
-                        badge.className = "text-xs font-semibold px-2.5 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200";
-                    }
                 } else {
                     throw new Error("HTTP Status " + response.status);
                 }
             } catch (err) {
-                console.warn("Could not load data.json. Using offline built-in data. Error:", err.message);
-                if (badge) {
-                    badge.innerText = "Fallback: Offline Data";
-                    badge.className = "text-xs font-semibold px-2.5 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200";
-                }
+                console.warn("Could not load data.json. Using offline built-in data.");
             }
 
             parseLoadedData(sourceData);
+            isInitialLoad = false;
             renderAll();
         }
 
@@ -361,6 +347,7 @@
                 return exp;
             });
             calculateSettlement();
+            saveToStorage(); // Trigger manual save here too for fast edits
         }
 
         function addNewRow() {
@@ -742,95 +729,11 @@
             renderTable();
             calculateSettlement();
             switchMobileTab(activeMobileTab);
+            saveToStorage(); // Save every time we refresh the UI
         }
 
         function filterTable() {
             renderTable();
-        }
-
-        function importJSON(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const parsed = JSON.parse(e.target.result);
-                    if (parsed.members && Array.isArray(parsed.members)) {
-                        members = parsed.members;
-                    }
-                    if (parsed.expenses && Array.isArray(parsed.expenses)) {
-                        expenses = parsed.expenses;
-                    } else if (Array.isArray(parsed)) {
-                        parseLoadedData(parsed);
-                    }
-                    showToast("📁 Backup loaded successfully!");
-                    renderAll();
-                } catch (err) {
-                    showToast("❌ Could not read JSON format.");
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        function exportJSON() {
-            const exportObject = {
-                appId: "china-trip-splitter-v2",
-                exportedAt: new Date().toISOString(),
-                members: members,
-                expenses: expenses
-            };
-
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObject, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "China_Trip_Splitter_With_Individual_Splits.json");
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-            showToast("💾 Progress saved as JSON!");
-        }
-
-        function exportCSV() {
-            let csv = "\uFEFF"; 
-            csv += "🇨🇳 China Trip Splitter - Advanced Settlement Report\n\n";
-            csv += "Date,Item Description,Category,Total Amount (RM),Payer(s),Split With / Shared By\n";
-
-            expenses.forEach(exp => {
-                const amount = parseFloat(exp.amount) || 0;
-                const payers = exp.paidBy.length > 0 ? exp.paidBy.join(" & ") : "None";
-                const splitters = exp.sharedBy.length > 0 ? exp.sharedBy.join(" & ") : "Nobody";
-                csv += `"${exp.date}","${exp.item}","${exp.category}",${amount.toFixed(2)},"${payers}","${splitters}"\n`;
-            });
-
-            csv += "\n\n=== Personal Balances Summary ===\n";
-            csv += "Member,Total Paid (RM),Consumed Share (RM),Net Difference (RM)\n";
-            
-            members.forEach(m => {
-                const bal = globalSettlement.balances[m] || 0;
-                const paid = globalSettlement.paidTotals[m] || 0;
-                const consumed = globalSettlement.consumedTotals[m] || 0;
-                const balanceStr = bal > 0 ? `+${bal.toFixed(2)} (Receives)` : `${bal.toFixed(2)} (Owes)`;
-                csv += `"${m}",${paid.toFixed(2)},${consumed.toFixed(2)},"${balanceStr}"\n`;
-            });
-
-            csv += "\n\n=== Smart Remittance Instructions ===\n";
-            if (globalSettlement.transfers.length === 0) {
-                csv += "All balances clear. No remittance needed.\n";
-            } else {
-                globalSettlement.transfers.forEach(t => {
-                    csv += `"${t.from} transfers to ${t.to}",RM ${t.amount.toFixed(2)}\n`;
-                });
-            }
-
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.setAttribute("download", "China_Trip_Settlement_With_Splits.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showToast("📈 Spreadsheet report downloaded!");
         }
 
         function showToast(msg) {
